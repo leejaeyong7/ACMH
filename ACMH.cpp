@@ -114,6 +114,10 @@ ACMH::~ACMH()
     cudaFree(rand_states_cuda);
     cudaFree(selected_views_cuda);
     cudaFree(depths_cuda); // Updated by Qingshan 2020-01-15
+    for (int i = 0; i < depths.size(); i++){
+	delete depths[i].data;
+    }
+    depths.clear();
 
     if (params.geom_consistency) {
         for (int i = 0; i < num_images; ++i) {
@@ -492,6 +496,9 @@ void ACMH::InuputInitialization(const std::string &dense_folder, const Problem &
     params.disparity_max = cameras[0].K[0] * params.baseline / params.depth_min;
 
     if (params.geom_consistency) {
+	for (int i = 0; i < depths.size(); i++){
+	  delete depths[i].data;
+	}
         depths.clear();
 
         std::stringstream result_path;
@@ -596,7 +603,6 @@ void ACMH::CudaSpaceInitialization(const std::string &dense_folder, const Proble
         cv::Mat_<cv::Vec3f> ref_normal;
         cv::Mat_<float> ref_cost;
         readDepthDmb(depth_path, ref_depth);
-        depths.push_back(ref_depth);
         readNormalDmb(normal_path, ref_normal);
         readDepthDmb(cost_path, ref_cost);
         int width = ref_depth.cols;
@@ -616,6 +622,9 @@ void ACMH::CudaSpaceInitialization(const std::string &dense_folder, const Proble
 
         cudaMemcpy(plane_hypotheses_cuda, plane_hypotheses_host, sizeof(float4) * width * height, cudaMemcpyHostToDevice);
         cudaMemcpy(costs_cuda, costs_host, sizeof(float) * width * height, cudaMemcpyHostToDevice);
+	delete ref_depth.data;
+	delete ref_normal.data;
+	delete ref_cost.data;
     }
 }
 

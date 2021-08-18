@@ -41,6 +41,25 @@ void ProcessProblem(const std::string &dense_folder, const Problem &problem, boo
     std::string result_folder = result_path.str();
     mkdir(result_folder.c_str(), 0777);
 
+    std::string suffix = "/depths.dmb";
+    if (geom_consistency) {
+        suffix = "/depths_geom.dmb";
+    }
+    std::string depth_path = result_folder + suffix;
+    std::string normal_path = result_folder + "/normals.dmb";
+    std::string cost_path = result_folder + "/costs.dmb";
+
+
+    // check if all exists and return early
+    if((access(depth_path.c_str(), F_OK) != -1) && 
+       (access(normal_path.c_str(), F_OK) != -1) && 
+       (access(cost_path.c_str(), F_OK) != -1)){
+        std::cout << "already processed image" << std::endl;
+        //std::cout << "Skipping already processed image" << std::endl;
+	//
+        //return;
+    }
+
     ACMH acmh;
     if (geom_consistency) {
         acmh.SetGeomConsistencyParams();
@@ -49,7 +68,6 @@ void ProcessProblem(const std::string &dense_folder, const Problem &problem, boo
 
     acmh.CudaSpaceInitialization(dense_folder, problem);
     acmh.RunPatchMatch();
-
     const int width = acmh.GetReferenceImageWidth();
     const int height = acmh.GetReferenceImageHeight();
 
@@ -67,16 +85,10 @@ void ProcessProblem(const std::string &dense_folder, const Problem &problem, boo
         }
     }
 
-    std::string suffix = "/depths.dmb";
-    if (geom_consistency) {
-        suffix = "/depths_geom.dmb";
-    }
-    std::string depth_path = result_folder + suffix;
-    std::string normal_path = result_folder + "/normals.dmb";
-    std::string cost_path = result_folder + "/costs.dmb";
     writeDepthDmb(depth_path, depths);
     writeNormalDmb(normal_path, normals);
     writeDepthDmb(cost_path, costs);
+
     std::cout << "Processing image " << std::setw(8) << std::setfill('0') << problem.ref_image_id << " done!" << std::endl;
 }
 
